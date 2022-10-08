@@ -5,7 +5,7 @@
 \usepackage{natbib}
 \usepackage{amsmath}
 \usepackage{url}
-\usepackage{hyperref}
+\usepackage[colorlinks = true]{hyperref}
 \usepackage[left=1.0cm,right=1cm,top=3cm,bottom=3cm]{geometry}
 \usepackage{amsfonts,amssymb}
 \usepackage{mathtools}
@@ -22,7 +22,7 @@
 
 \abstract{Here we provide a pedantic description of the sparse variational
 Gaussian process factor analysis (svGPFA) theory, expanding on
-\cite{dunckerAndSahani18,dunckerAndSahani18supplementary}.}
+\cite{dunckerAndSahani18}.}
 
 \section{GPFA model}
 
@@ -78,10 +78,16 @@ $\mathbf{u}_{kr}$ is given in Eq.~\ref{eq:gpfaWithIndPointsPrior}.
 
 We next derive the functional form of $p(x_{kr}(\cdot)|\mathbf{u}_{kr})$.
 
-Define the random vector $\mathbf{x}_{kr}$ as the random process
+For any $P\in\mathbb{N}$, define the random vector $\mathbf{x}_{kr}$ as the random process
 $x_{kr}(\cdot)$ evaluated at times
-$\mathbf{t}^{(r)}\coloneqq\left\{t_1^{(r)},\ldots,t_M^{(r)}\right\}$ (i.e.,
-$\mathbf{x}_{kr}\coloneqq[x_{kr}(t_1^{(r)}),\ldots,x_{kr}(t_M^{(r)})]^\intercal$).
+$\mathbf{t}_P^{(r)}\coloneqq\left\{t_1^{(r)},\ldots,t_P^{(r)}\right\}$. That
+is,
+
+\begin{equation}
+    \mathbf{x}_{kr}\coloneqq[x_{kr}(t_1^{(r)}),\ldots,x_{kr}(t_P^{(r)})]^\intercal
+    \label{eq:latentVector}
+\end{equation}
+
 Then, because the inducing points $\mathbf{u}_{kr}$ are evaluations of the
 latent process $x_{kr}(\cdot)$ at $\mathbf{z}_{kr}$, $\mathbf{x}_{kr}$ and
 $\mathbf{u}_{kr}$ are jointly Gaussian:
@@ -115,26 +121,108 @@ vectors~\citep[][Eq. 2.116]{bishop06} to Eq.~\ref{eq:prior}, we obtain
 
 \begin{equation}
     p(\mathbf{x}_{kr}|\mathbf{u}_{kr})=\mathcal{N}\left(\mathbf{x}_{kr}\left|K_\mathbf{tz}^{(kr)}\left(K_{zz}^{(kr)}\right)^{-1}\mathbf{u}_{kr},\;K_\mathbf{tt}^{(r)}-K_\mathbf{tz}^{(kr)}\left(K_{zz}^{(kr)}\right)^{-1}K_\mathbf{zt}^{(kr)}\right.\right)
-    \label{eq:latentConditionalIndPointsVector}
+    \label{eq:priorLatentsGivenIndPointsVector}
 \end{equation}
 
-Because Eq.~\ref{eq:latentConditionalIndPointsVector} is valid for any
-$\mathbf{t}^{(r)}$, it follows that
+Because Eq.~\ref{eq:priorLatentsGivenIndPointsVector} is valid for any
+$\mathbf{t}_P^{(r)}$, and any $\mathbf{x}_{kr}$ derived from it, it follows that
 
-\begin{equation*}
-    p(x_{kr}(\cdot)|\mathbf{u}_{kr})=\mathcal{GP}\left(\tilde{\mu}_{kr}(\cdot), \tilde{\kappa}_{kr}(\cdot,\cdot\right))
-\end{equation*}
-
-\noindent with
-
-\begin{equation*}
+\begin{equation}
     \begin{aligned}
-        \tilde{\mu}_{kr}(t)&=\kappa_k(t,\mathbf{z}_{kr})\left(K_{zz}^{(kr)}\right)^{-1}\mathbf{u}_{kr},\\
+        p(x_{kr}(\cdot)|\mathbf{u}_{kr})&=\mathcal{GP}\left(\tilde{\mu}_{kr}(\cdot),\tilde{\kappa}_{kr}(\cdot,\cdot\right))\\
+        \tilde{\mu}_{kr}(t)&=\kappa_k(t,\mathbf{z}_{kr})\left(K_{zz}^{(kr)}\right)^{-1}\mathbf{u}_{kr}\\
         \tilde{\kappa}_k(t,t')&=\kappa_k(t,t')-\kappa_k(t,\mathbf{z}_{kr})\left(K_{zz}^{(kr)}\right)^{-1}\kappa_k(\mathbf{z}_{kr},t')
+        \label{eq:priorLatentsGivenIndPoints} 
     \end{aligned}
-\end{equation*}
+\end{equation}
 
 \noindent which is Eq.~3 in \citet{dunckerAndSahani18}.
+
+We obtain the svGPFA prior on the latents by using the marginal formula of the
+linear Gaussian model \citep[][Eq.~2.115]{bishop06} with the last line in
+Eq.~\ref{eq:prior} and with Eq.~\ref{eq:priorLatentsGivenIndPointsVector},
+yielding
+
+\begin{equation}
+    p(\mathbf{x}_{kr})=\mathcal{N}\left(\mathbf{x}_{kr}\left|\mathbf{0},\;K_\mathbf{tt}^{(r)}\right.\right)
+    \label{eq:latentsPriorVector}
+\end{equation}
+
+Because Eq.~\ref{eq:priorLatentsGivenIndPointsVector} is valid for any
+$\mathbf{t}_P^{(r)}$, and any $\mathbf{x}_{kr}$ derived from it, it follows that
+
+\begin{equation*}
+    p(x_{kr}(\cdot))=\mathcal{GP}\left(0(\cdot),\;\kappa_k(\cdot,\cdot)\right)
+\end{equation*}
+
+\noindent which shows that the svGPFA prior on the latent processes is
+unrelated to the inducing points and identical to the GPFA one (second line in
+Eq.~\ref{eq:gpfaModel}, with $\mu_k(\cdot)=0(\cdot)$).
+
+\section{Variational distribution of the latent process $x_{kr}(\cdot)$}
+
+From Eq.~3 in \citet[][supplementary]{dunckerAndSahani18}, the approximate joint
+posterior for the latent process $x_{kr}(\cdot)$ and the inducing points
+$\mathbf{u}_{kr}$ is
+
+\begin{equation}
+    q(x_{kr}(\cdot),\mathbf{u}_{kr})=p(x_{kr}(\cdot)|\mathbf{u}_{kr})q(\mathbf{u}_{kr})
+\end{equation}
+
+\noindent with $p(x_{kr}(\cdot)|\mathbf{u}_{kr})$ given in Eq.~\ref{eq:priorLatentsGivenIndPoints} and
+
+\begin{equation}
+    q(\mathbf{u}_{kr})=\mathcal{N}(\mathbf{u}_{kr}(\cdot)|\mathbf{m}_{kr}, S_k)
+    \label{eq:qu}
+\end{equation}
+
+Thus, for any random vector $\mathbf{x}_{kr}$, as in Eq.~\ref{eq:latentVector},
+we have
+
+\begin{equation}
+    q(\mathbf{x}_{kr},\mathbf{u}_{kr})=p(\mathbf{x}_{kr}|\mathbf{u}_{kr})q(\mathbf{u}_{kr})
+\end{equation}
+
+\noindent with $p(\mathbf{x}_{kr}|\mathbf{u}_{kr})$ given in
+Eq.~\ref{eq:priorLatentsGivenIndPointsVector}. Using the marginal formula for
+the linear Gaussian model \citep[][Eq.~2.115]{bishop06} with
+Eqs.~\ref{eq:priorLatentsGivenIndPointsVector} and~\ref{eq:qu} we obtain
+
+\begin{align}
+    q(\mathbf{x}_{kr})=\mathcal{N}\left(\mathbf{x}_{kr}|K_{tz}^{kr}(K_{zz}^{kr})^{-1}\mathbf{m}_{kr},\;K_{tt}^k+K_{tz}^{kr}\left((K_{zz}^{kr})^{-1}S_{kr}(K_{zz}^{kr})^{-1}-(K_{zz}^{kr})^{-1  }\right)K_{zt}^{kr}\right)
+    \label{eq:qxRandomVec}
+\end{align}
+
+Because Eq.~\ref{eq:qxRandomVec} is valid for any $\mathbf{t}_P^{(r)}$, and any
+$\mathbf{x}_{kr}$ derived from it, it follows that
+
+
+\begin{equation}
+    \begin{aligned}
+        q(x_{kr}(\cdot))&=\mathcal{GP}\left(\breve\mu_{kr}(\cdot),\breve\kappa_{kr}(\cdot,\cdot)\right)\\
+        \breve\mu_{kr}(t)&=\kappa_k(t,z_{kr})(K_{zz}^{kr})^{-1}\mathbf{m}_{kr},\\
+        \breve\kappa_{kr}(t,t')&=\kappa_k(t,t')+\kappa_k(t,z_{kr})\left((K_{zz}^{kr})^{-1}S_{kr}(K_{zz}^{kr})^{-1}-(K_{zz}^{kr})^{-1}\right)\kappa_k(z_{kr},t')
+    \end{aligned}
+    \label{eq:qx}
+\end{equation}
+
+\section{Variational distribution of $h_{nr}(\cdot)$}
+
+Finally, because affine trasformations of Gaussians are Gaussians,
+$h_{nr}(\cdot)$ is an affine transformation of $\{x_{kr}(\cdot)\}$ (which are
+Gaussians, Eq.~\ref{eq:qx}), then the approximate posterior of $h_{nr}(\cdot)$
+is the Gaussian process in Eq.~\ref{eq:qh}.
+
+\begin{equation}
+    \begin{aligned}
+        q(h_{nr}(\cdot))&=\mathcal{GP}\left(\tilde\mu_{nr}(\cdot),\tilde\kappa_{nr}(\cdot,\cdot)\right)\\
+        \tilde\mu_{nr}(t)&=\sum_{k=1}^Kc_{nk}\breve\mu_{kr}(t)\\
+        \tilde\kappa_{nr}(t,t')&=\sum_{k=1}^Kc_{nk}^2\breve\kappa_{kr}(t,t')
+    \end{aligned}
+    \label{eq:qh}
+\end{equation}
+
+\noindent which is Eq.~5 in \cite{dunckerAndSahani18}.
 
 \section{Derivation of the svGPFA variational lower bound}
 
@@ -142,7 +230,7 @@ To derive the sparse variational lower bound we have the freedom of using
 $\{x_{kr}(\cdot)\}_{k=1,r=1}^{K,R}$ or $\{h_{nr}(\cdot)\}_{n=1,r=1}^{N,R}$ as
 latent processes in the complete-data likelihood\footnote{To simplify notation below we write
 $\{x_{kr}(\cdot)\}_{k=1,r=1}^{K,R}$ as $\{x_{kr}(\cdot)\}$ and similarly for $\{\mathbf{u}_{kr}\}_{k=1,r=1}^{K,R}$ and $\{h_{nr}(\cdot)\}_{n=1,r=1}^{N,R}$}. In
-\cite{dunckerAndSahani18supplementary} the authors used the former, which
+\cite[][supplementary]{dunckerAndSahani18} the authors used the former, which
 requires the non-trivial proof of Eq.~\ref{eq:difficultProofDS18}.
 
 \begin{align}
@@ -163,7 +251,7 @@ requires the non-trivial proof of Eq.~\ref{eq:difficultProofDS18}.
     \label{eq:lowerBound}
 \end{align}
 
-As in \cite{dunckerAndSahani18supplementary}, we choose the approximating variational distribution in Eq.~\ref{eq:approxDistr}.
+As in \cite[][supplementary]{dunckerAndSahani18}, we choose the approximating variational distribution in Eq.~\ref{eq:approxDistr}.
 
 \begin{equation}
     \begin{aligned}
@@ -255,61 +343,6 @@ Replacing Eq.~\ref{eq:expectedLogLike} and Eq.~\ref{eq:kl} into Eq.~\ref{eq:lowe
 \end{align}
 
 \noindent which is Eq.~4 in \cite{dunckerAndSahani18}.
-
-\section{Variational distribution of $h_{nr}(\cdot)$}
-
-For the calculation of the lower bound in the right-hand side of
-Eq.~\ref{eq:lowerBoundFinal}, below we derive the distribution
-$q(h_{nr}(\cdot))$.
-
-We first deduce the distribution $q(x_{xr}(\cdot))$. Note, from
-Eq.~\ref{eq:gpfaWithIndPointsPrior}, that for any $P\in\mathbb{N}$ and for any
-$\mathbf{t}=(t_1,\ldots,t_P)\in\mathbb{R}^P$ the approximate variational
-posterior of the random vectors
-$\mathbf{x}_{kr}=(x_{kr}(t_1),\ldots,x_{kr}(t_P))$ and $\mathbf{u}_{kr}$ is
-jointly Gaussian
-
-\begin{equation}
-    \begin{aligned}
-        q(\mathbf{x}_{kr},\mathbf{u}_{kr})&=p(\mathbf{x}_{kr}|\mathbf{u}_{kr})q(\mathbf{u}_{kr})\\
-                                          &=\mathcal{N}\left(\mathbf{x}_{kr}|K_{tz}^{kr}(K_{zz}^{kr})^{-1}\mathbf{u}_{kr},\;K_{tt}^k-K_{tz}^{kr}(K_{zz}^{kr})^{-1}K_{zt}^{kr}\right)\mathcal{N}(\mathbf{u}_{kr}|\mathbf{m}_{kr},\;S_{kr})
-    \end{aligned}
-    \label{eq:qxu}
-\end{equation}
-
-\noindent where $K_{tt}$,$K_{tz}$,$K_{zt}$, and $K_{zz}$ are covariance matrices obtained by evalating of $\kappa_k(t,t')$,$\kappa_k(t,z)$,$\kappa_k(z,t)$, and $\kappa_k(z,z')$, respectively, at $t,t'\in \{t_1,\ldots t_P\}$ and $z,z'\in \{\mathbf{z}_{kr}[1],\ldots,\mathbf{z}_{kr}[M_{kr}]\}$. Next, using the expression for the marginal of a joint Gaussian distribution (e.g., Eq.~2.115 in \cite{bishop06}) we obtain
-
-\begin{align}
-    q(\mathbf{x}_{kr})=\mathcal{N}\left(\mathbf{x}_{kr}|K_{tz}^{kr}(K_{zz}^{kr})^{-1}\mathbf{m}_{kr},\;K_{tt}^k+K_{tz}^{kr}\left((K_{zz}^{kr})^{-1}S_{kr}(K_{zz}^{kr})^{-1}-(K_{zz}^{kr})^{-1  }\right)K_{zt}^{kr}\right)
-    \label{eq:qxRandomVec}
-\end{align}
-
-Because Eq.~\ref{eq:qxRandomVec} holds for any $P\in\mathbb{N}$ and for any $(t_1,\ldots,t_P)\in\mathbb{R}^P$ then
-
-\begin{equation}
-    \begin{aligned}
-        q(x_{kr}(\cdot))&=\mathcal{GP}\left(\breve\mu_{kr}(\cdot),\breve\kappa_{kr}(\cdot,\cdot)\right)\\
-        \breve\mu_{kr}(t)&=\kappa_k(t,z_{kr})(K_{zz}^{kr})^{-1}\mathbf{m}_{kr},\\
-        \breve\kappa_{kr}(t,t')&=\kappa_k(t,t')+\kappa_k(t,z_{kr})\left((K_{zz}^{kr})^{-1}S_{kr}(K_{zz}^{kr})^{-1}-(K_{zz}^{kr})^{-1}\right)\kappa_k(z_{kr},t')
-    \end{aligned}
-    \label{eq:qx}
-\end{equation}
-
-Finally, because affine trasformations of Gaussians are Gaussians,
-$h_{nr}(\cdot)$ is an affine transformation of $\{x_{kr}(\cdot)\}$ (which are
-Gaussians, Eq.~\ref{eq:qx}), then the approximate posterior of $h_{nr}(\cdot)$
-is the Gaussian process in Eq.~\ref{eq:qh}.
-
-\begin{equation}
-    \begin{aligned}
-        q(h_{nr}(\cdot))&=\mathcal{GP}\left(\tilde\mu_{nr}(\cdot),\tilde\kappa_{nr}(\cdot,\cdot)\right)\\
-        \tilde\mu_{nr}(t)&=\sum_{k=1}^Kc_{nk}\breve\mu_{kr}(t)\\
-        \tilde\kappa_{nr}(t,t')&=\sum_{k=1}^Kc_{nk}^2\breve\kappa_{kr}(t,t')
-    \end{aligned}
-    \label{eq:qh}
-\end{equation}
-
-\noindent which is Eq.~5 in \cite{dunckerAndSahani18}.
 
 \bibliographystyle{apalike}
 \bibliography{latentVariableModels,machineLearning}
