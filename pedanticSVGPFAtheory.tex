@@ -1,0 +1,316 @@
+\documentclass[12pt]{article}
+
+\usepackage{apalike}
+\let\bibhang\relax
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage[left=1.0cm,right=1cm,top=3cm,bottom=3cm]{geometry}
+\usepackage{amsfonts,amssymb}
+\usepackage{mathtools}
+
+\def\labelitemi{--}
+
+\title{Pedantic description of the svGPFA theory}
+
+\author{Joaqu\'{i}n Rapela}
+
+\begin{document}
+
+\maketitle
+
+\abstract{Here we provide a pedantic description of the sparse variational
+Gaussian process factor analysis (svGPFA) theory, expanding on
+\cite{dunckerAndSahani18,dunckerAndSahani18supplementary}.}
+
+\section{GPFA model}
+
+\begin{equation}
+    \begin{aligned}
+        p(\{x_{kr}(\cdot)\}_{k=1,r=1}^{K,R}) &= \prod_{r=1}^R\prod_{k=1}^Kp(x_{kr}(\cdot))\\
+        x_{kr}(\cdot) &\sim \mathcal{GP}(\mu_k(\cdot),\kappa_k(\cdot,\cdot))&&{\text{for}\; k=1, \ldots, K\;\text{and}\;r=1,\ldots, R}\\
+        h_{nr}(\cdot) &= \sum_{k=1}^Kc_{nk}x_{kr}(\cdot) + d_n&&{\text{for}\; n=1, \ldots, N\;\text{and}\;r=1,\ldots, R}\\
+        p(\{\mathbf{y}_{nr}\}_{n=1,r=1}^{N,R}|\{h_{nr}(\cdot)\}_{n=1,r=1}^{N,R}) &= \prod_{r=1}^R\prod_{n=1}^Np(\mathbf{y}_{nr}|h_{nr}(\cdot))
+    \end{aligned}
+    \label{eq:gpfaModel}
+\end{equation}
+
+\noindent where $x_{kr}(\cdot)$ is the latent process $k$ in trial $r$, $h_{nr}(\cdot)$ is the embedding process for neuron $n$ and trial $r$ and $\mathbf{y}_{nr}$ is the activity of neuron $n$ in trial $r$.
+
+Notes:
+
+\begin{itemize}
+
+    \item the first equation shows that the latent processes are independent,
+
+    \item the second equation shows that the latent processes share mean and
+        covariance functions across trials. That is, for any $k$, the mean and
+        covariance functions  of latents processes of different trials,
+        $x_{kr}(\cdot), r=1,\ldots, R$, are the same ($\mu_k(\cdot)$ and
+        $\kappa_k(\cdot,\cdot)$),
+
+    \item the fourth equation shows that, given the embedding processes, the
+        responses of different neurons are independent.
+
+\end{itemize}
+
+\section{svGPFA prior}
+
+To use the sparse variational framework for Gaussian processes \citet{dunckerAndSahani18} augmented the GPFA model by introducing inducing
+points $\mathbf{u}_{kr}$ for each latent process $k$ and trial $r$. The
+inducing points $\mathbf{\mathbf{u}}_{kr}$ represent evaluations of the latent
+process $x_{kr}(\cdot)$ at the $M_{kr}$ locations $\mathbf{\mathbf{z}}_{kr}$. A
+joint prior over the latent process $x_{kr}(\cdot)$ and its inducing points
+$\mathbf{u}_{kr}$ is given in Eq.~\ref{eq:gpfaWithIndPointsPrior}.
+
+\begin{equation}
+    \begin{aligned}
+        p(\{x_{kr}(\cdot)\}_{k=1,r=1}^{K,R},\{\mathbf{u}_{kr}\}_{k=1,r=1}^{K,R}) &= p(\{x_{kr}(\cdot)\}_{k=1,r=1}^{K,R}|\{\mathbf{u}_{kr}\}_{k=1,r=1}^{K,R})p(\{\mathbf{u}_{kr}\}_  {k=1,r=1}^{K,R})\\
+        p(\{x_{kr}(\cdot)\}_{k=1,r=1}^{K,R}|\{\mathbf{u}_{kr}\}_  {k=1,r=1}^{K,R}) &= \prod_{k=1}^k\prod_{r=1}^{R}p(x_{kr}(\cdot)|\mathbf{u}_{kr})\\
+        p(\{\mathbf{u}_{kr}\}_{k=1,r=1}^{K,R})&=\prod_{k=1}^k\prod_{r=1}^{R}p(\mathbf{u}_{kr})\\
+        p(\mathbf{u}_{kr})&=\mathcal{N}(\mathbf{0},K^{kr}_{zz})
+    \end{aligned}
+    \label{eq:gpfaWithIndPointsPrior}
+\end{equation}
+
+\noindent where $K_{zz}^{(kr)}[i,j]=\kappa_k(\mathbf{z}_{kr}[i],\mathbf{z}_{kr}[j])$.
+
+We next derive the functional form of $p(x_{kr}(\cdot)|\mathbf{u}_{kr})$.
+
+Define the random vector $\mathbf{x}_{kr}$ as the random process
+$x_{kr}(\cdot)$ evaluated at times
+$\mathbf{t}^{(r)}\coloneqq\left\{t_1^{(r)},\ldots,t_M^{(r)}\right\}$ (i.e.,
+$\mathbf{x}_{kr}\coloneqq[x_{kr}(t_1^{(r)}),\ldots,x_{kr}(t_M^{(r)})]^\intercal$).
+Then, because the inducing points $\mathbf{u}_{kr}$ are evaluations of the
+latent process $x_{kr}(\cdot)$ at $\mathbf{z}_{kr}$, $\mathbf{x}_{kr}$ and
+$\mathbf{u}_{kr}$ are jointly Gaussian:
+
+\begin{equation}
+    p\left(\left[\begin{array}{c}
+        \mathbf{u}_{kr}\\
+        \mathbf{x}_{kr}
+    \end{array}\right]\right)
+    =\mathcal{N}\left(\left.\left[\begin{array}{c}
+        \mathbf{u}_{kr}\\
+        \mathbf{x}_{kr}
+    \end{array}\right]\right|\left[\begin{array}{c}
+        \mathbf{0}\\
+        \mathbf{0}
+    \end{array}\right],\left[\begin{array}{cc}
+        K_\mathbf{zz}^{(kr)}&K_\mathbf{zt}^{(kr)}\\
+        K_\mathbf{tz}^{(kr)}&K_\mathbf{tt}^{(r)}
+    \end{array}\right]\right)
+    \label{eq:prior}
+\end{equation}
+
+\noindent where
+$K_\mathbf{tz}^{(kr)}[i,j]=\kappa_k(t^{(r)}_i,\mathbf{z}_{kr}[j])$,
+$K_\mathbf{zt}^{(kr)}[i,j]=\kappa_k(\mathbf{z}_{kr}[i],t_j^{(r)})$
+and
+$K_\mathbf{tt}^{(r)}[i,j]=\kappa_k(t_i^{(r)},t_j^{(r)})$.
+
+Now, applying the formula for the conditional pdf of jointly Normal random
+vectors~\citep[][Eq. 2.116]{bishop06} to Eq.~\ref{eq:prior}, we obtain
+
+\begin{equation}
+    p(\mathbf{x}_{kr}|\mathbf{u}_{kr})=\mathcal{N}\left(\mathbf{x}_{kr}\left|K_\mathbf{tz}^{(kr)}\left(K_{zz}^{(kr)}\right)^{-1}\mathbf{u}_{kr},\;K_\mathbf{tt}^{(r)}-K_\mathbf{tz}^{(kr)}\left(K_{zz}^{(kr)}\right)^{-1}K_\mathbf{zt}^{(kr)}\right.\right)
+    \label{eq:latentConditionalIndPointsVector}
+\end{equation}
+
+Because Eq.~\ref{eq:latentConditionalIndPointsVector} is valid for any
+$\mathbf{t}^{(r)}$, it follows that
+
+\begin{equation*}
+    p(x_{kr}(\cdot)|\mathbf{u}_{kr})=\mathcal{GP}\left(\tilde{\mu}_{kr}(\cdot), \tilde{\kappa}_{kr}(\cdot,\cdot\right))
+\end{equation*}
+
+\noindent with
+
+\begin{equation*}
+    \begin{aligned}
+        \tilde{\mu}_{kr}(t)&=\kappa_k(t,\mathbf{z}_{kr})\left(K_{zz}^{(kr)}\right)^{-1}\mathbf{u}_{kr},\\
+        \tilde{\kappa}_k(t,t')&=\kappa_k(t,t')-\kappa_k(t,\mathbf{z}_{kr})\left(K_{zz}^{(kr)}\right)^{-1}\kappa_k(\mathbf{z}_{kr},t')
+    \end{aligned}
+\end{equation*}
+
+\noindent which is Eq.~3 in \citet{dunckerAndSahani18}.
+
+\section{Derivation of the svGPFA variational lower bound}
+
+To derive the sparse variational lower bound we have the freedom of using
+$\{x_{kr}(\cdot)\}_{k=1,r=1}^{K,R}$ or $\{h_{nr}(\cdot)\}_{n=1,r=1}^{N,R}$ as
+latent processes in the complete-data likelihood\footnote{To simplify notation below we write
+$\{x_{kr}(\cdot)\}_{k=1,r=1}^{K,R}$ as $\{x_{kr}(\cdot)\}$ and similarly for $\{\mathbf{u}_{kr}\}_{k=1,r=1}^{K,R}$ and $\{h_{nr}(\cdot)\}_{n=1,r=1}^{N,R}$}. In
+\cite{dunckerAndSahani18supplementary} the authors used the former, which
+requires the non-trivial proof of Eq.~\ref{eq:difficultProofDS18}.
+
+\begin{align}
+    \text{E}_{q(\{x_{kr}(\cdot)\})}\log p(\{\mathbf{y}_{nr}\}|\{x_{kr}(\cdot)\})=\text{E}_{q(\{h_{nr}(\cdot)\})}\log p(\{\mathbf{y}_{nr}\}|\{h_{nr}(\cdot)\})
+    \label{eq:difficultProofDS18}
+\end{align}
+
+\noindent Here we use the latter, which avoids the need of Eq.~\ref{eq:difficultProofDS18}. Then the complete data likelihood is given in Eq.~\ref{eq:completeDataLikelihood} and a variational lower bound in Eq.~\ref{eq:lowerBound}.
+
+\begin{align}
+    p(\{\mathbf{y}_{nr}\}, \{h_{nr}(\cdot)\}, \{\mathbf{u}_{kr}\})=p(\{\mathbf{y}_{nr}\}|\{h_{nr}(\cdot)\})p(\{h_{nr}(\cdot)\}|\{\mathbf{u}_{kr}\})p(\{\mathbf{u}_{kr}\})
+    \label{eq:completeDataLikelihood}
+\end{align}
+
+\begin{align}
+    \log p(\{\mathbf{y}_{nr}\})\ge E_{q(\{h_{nr}(\cdot)\}, \{\mathbf{u}_{kr}\})}\log\left(p(\{\mathbf{y}_{nr}\}|\{h_{nr}(\cdot)\}, \{\mathbf{u}_{kr}\}\right)-KL\left\{q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})||p(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})\right\}
+    % \log p(\{\mathbf{y}_{nr}\})\ge\int\int q(\{h_{nr}(\cdot)\}, \{\mathbf{u}_{kr}\})\log\left(\frac{p(\{\mathbf{y}_{nr}\}, \{h_{nr}(\cdot)\}, \{\mathbf{u}_{kr}\})}{q(\{h_{nr}(\cdot)\}, \{\mathbf{u}_{kr}\})}\right)d\{\mathbf{u}_{kr}\}d\{h_{nr}(\cdot)\}
+    \label{eq:lowerBound}
+\end{align}
+
+As in \cite{dunckerAndSahani18supplementary}, we choose the approximating variational distribution in Eq.~\ref{eq:approxDistr}.
+
+\begin{equation}
+    \begin{aligned}
+        q(\{x_{kr}(\cdot)\}, \{\mathbf{u}_{kr}\})&=q(\{x_{kr}(\cdot)\}|\{\mathbf{u}_{kr}\})q(\{\mathbf{u}_{kr}\})\\
+        q(\{x_{kr}(\cdot)\}|\{\mathbf{u}_{kr}\})&=p(\{x_{kr}(\cdot)\}|\{\mathbf{u}_{kr}\})\\
+        q(\{\mathbf{u}_{kr}\})&=\prod_{r=1}^R\prod_{k=1}^Kq(\mathbf{u}_{kr})\\
+        q(\mathbf{u}_{kr})&=\mathcal{N}(\mathbf{u}_{kr}|\mathbf{m}_{kr},S_{kr})
+    \end{aligned}
+    \label{eq:approxDistr}
+\end{equation}
+
+Because $h_{nr}(\cdot)$ is a function of $\{x_{kr}(\cdot)\}$ only (Eq.~\ref{eq:gpfaModel}), and because $q(\{x_{kr}(\cdot)\}|\{\mathbf{u}_{kr}\})=p(\{x_{kr}(\cdot)\}|\{\mathbf{u}_{kr}\})$ (Eq.~\ref{eq:approxDistr}), then 
+
+\begin{align}
+    q(\{h_{nr}(\cdot)\}|\{\mathbf{u}_{kr}\})=p(\{h_{nr}(\cdot)\}|\{\mathbf{u}_{kr}\})
+    \label{eq:qH_equals_pH}
+\end{align}
+
+% \pagebreak
+The first term in Eq.~\ref{eq:lowerBound} can be rewritten as
+
+\begin{equation}
+    \begin{aligned}
+        &E_{q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})}\log\left(p(\{\mathbf{y}_{nr}\}|\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\}\right)=\\
+        &\int\int q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})\log\left(p(\{\mathbf{y}_{nr}\}|\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\}\right)d\{\mathbf{u}_{kr}\}d\{h_{nr}(\cdot)\}=\\
+        &\int\int q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})\log\left(p(\{\mathbf{y}_{nr}\}|\{h_{nr}(\cdot)\}\right)d\{\mathbf{u}_{kr}\}d\{h_{nr}(\cdot)\}=\\
+        &\int\left(\int q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})d\{\mathbf{u}_{kr}\}\right)\log\left(p(\{\mathbf{y}_{nr}\}|\{h_{nr}(\cdot)\}\right)d\{h_{nr}(\cdot)\}=\\
+        &\int q(\{h_{nr}(\cdot)\})\log\left(p(\{\mathbf{y}_{nr}\}|\{h_{nr}(\cdot)\}\right)d\{h_{nr}(\cdot)\}=\\
+        &\int q(\{h_{nr}(\cdot)\})\log\left(\prod_{r=1}^R\prod_{n=1}^Np(\mathbf{y}_{nr}|h_{nr}(\cdot))\right)d\{h_{nr}(\cdot)\}=\\
+        &\sum_{r=1}^R\sum_{n=1}^N\int q(\{h_{nr}(\cdot)\})\log\left(p(\mathbf{y}_{nr}|h_{nr}(\cdot))\right)d\{h_{nr}(\cdot)\}=\\
+        &\sum_{r=1}^R\sum_{n=1}^N\int \int q(\{h_{n'r'}(\cdot)\}_{n'\ne n, r'\ne r}|h_{nr}(\cdot))q(h_{nr}(\cdot))\log\left(p(\mathbf{y}_{nr}|h_{nr}(\cdot))\right)d\{h_{n'r'}(\cdot)\}_{n'\ne n, r'\ne r}dh_{nr}(\cdot)=\\
+        &\sum_{r=1}^R\sum_{n=1}^N\int\left(\int q(\{h_{n'r'}(\cdot)\}_{n'\ne n, r'\ne r}|h_{nr}(\cdot))d\{h_{n'r'}(\cdot)\}_{n'\ne n,r'\ne r}\right)q(h_{nr}(\cdot))\log\left(p(\mathbf{y}_{nr}|h_{nr}(\cdot))\right)dh_{nr}(\cdot)=\\
+        &\sum_{r=1}^R\sum_{n=1}^N\int q(h_{nr}(\cdot))\log\left(p(\mathbf{y}_{nr}|h_{nr}(\cdot))\right)dh_{nr}(\cdot)=\\
+        &\sum_{r=1}^R\sum_{n=1}^NE_{q(h_{nr}(\cdot))}\log\left(p(\mathbf{y}_{nr}|h_{nr}(\cdot))\right)
+    \end{aligned}
+   \label{eq:expectedLogLike}
+\end{equation}
+
+Notes:
+
+\begin{itemize}
+
+    \item the second line follows from the previous one because, given the
+        embedding process, activities of neurons are independent of inducing
+        points (Eq.~\ref{eq:completeDataLikelihood}),
+
+    \item the fifth line follows from the previous one because, given embedding
+        processes, responses of neurons are independent of each other (last
+        line in Eq.~\ref{eq:gpfaModel}),
+
+\end{itemize}
+
+\pagebreak
+The second term in Eq.~\ref{eq:lowerBound} can be rewritten as
+
+\begin{equation}
+    \begin{aligned}
+        KL\left\{q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})||p(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})\right\}&=\int\int q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})\log\frac{q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})}{p(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})}d\{h_{nr}(\cdot)\}d\{\mathbf{u}_{kr}\}\\
+        &=\int\int q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})\log\frac{q(\{h_{nr}(\cdot)\}|\{\mathbf{u}_{kr}\})q(\{\mathbf{u}_{kr}\})}{p(\{h_{nr}(\cdot)\}|\{\mathbf{u}_{kr}\})p(\{\mathbf{u}_{kr}\})}d\{h_{nr}(\cdot)\}d\{\mathbf{u}_{kr}\}\\
+        &=\int\int q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})\log\frac{q(\{\mathbf{u}_{kr}\})}{p(\{\mathbf{u}_{kr}\})}d\{h_{nr}(\cdot)\}d\{\mathbf{u}_{kr}\}\\
+        &=\int\int q(\{h_{nr}(\cdot)\},\{\mathbf{u}_{kr}\})d\{h_{nr}(\cdot)\}\log\frac{q(\{\mathbf{u}_{kr}\})}{p(\{\mathbf{u}_{kr}\})}d\{\mathbf{u}_{kr}\}\\
+        &=\int q(\{\mathbf{u}_{kr}\})\log\frac{q(\{\mathbf{u}_{kr}\})}{p(\{\mathbf{u}_{kr}\})}d\{\mathbf{u}_{kr}\}\\
+        &=\int q(\{\mathbf{u}_{kr}\})\log\frac{\prod_{r=1}^R\prod_{k=1}^Kq(\mathbf{u}_{kr})}{\prod_{r=1}^R\prod_{k=1}^Kp(\mathbf{u}_{kr})}d\{\mathbf{u}_{kr}\}\\
+        &=\int q(\{\mathbf{u}_{kr}\})\sum_{r=1}^R\sum_{k=1}^K\log\frac{q(\mathbf{u}_{kr})}{p(\mathbf{u}_{kr})}d\{\mathbf{u}_{kr}\}\\
+        &=\sum_{r=1}^R\sum_{k=1}^K\int q(\{\mathbf{u}_{kr}\})\log\frac{q(\mathbf{u}_{kr})}{p(\mathbf{u}_{kr})}d\{\mathbf{u}_{kr}\}\\
+        &=\sum_{r=1}^R\sum_{k=1}^K\int\prod_{k'=1}^K\prod_{r'=1}^Rq(\mathbf{u}_{k'r'})\log\frac{q(\mathbf{u}_{kr})}{p(\mathbf{u}_{kr})}d\{\mathbf{u}_{kr}\}\\
+        &=\sum_{r=1}^R\sum_{k=1}^K\int q(\mathbf{u}_{kr})\log\frac{q(\mathbf{u}_{kr})}{p(\mathbf{u}_{kr})}d\mathbf{u}_{kr}\\
+        &=\sum_{r=1}^R\sum_{k=1}^K KL(q(\mathbf{u}_{kr})||p(\mathbf{u}_{kr}))
+    \end{aligned}
+    \label{eq:kl}
+\end{equation}
+
+Notes:
+
+\begin{itemize}
+
+    \item the third line follows from the previous one by Eq.~\ref{eq:qH_equals_pH},
+
+    \item the tenth line follows from the previous because, for $k'\neq k$ or
+        $r'\neq r$, the factors $q(\mathbf{u}_{k'r'})$ integrate out to one.
+
+\end{itemize}
+
+Replacing Eq.~\ref{eq:expectedLogLike} and Eq.~\ref{eq:kl} into Eq.~\ref{eq:lowerBound} we obtain
+
+\begin{align}
+    \log p(\{\mathbf{y}_{nr}\})\ge \sum_{r=1}^R\sum_{n=1}^NE_{q(h_{nr}(\cdot))}\log\left(p(\mathbf{y}_{nr}|h_{nr}(\cdot))\right)-\sum_{r=1}^R\sum_{k=1}^K KL(q(\mathbf{u}_{kr})||p(\mathbf{u}_{kr}))
+    \label{eq:lowerBoundFinal}
+\end{align}
+
+\noindent which is Eq.~4 in \cite{dunckerAndSahani18}.
+
+\section{Variational distribution of $h_{nr}(\cdot)$}
+
+For the calculation of the lower bound in the right-hand side of
+Eq.~\ref{eq:lowerBoundFinal}, below we derive the distribution
+$q(h_{nr}(\cdot))$.
+
+We first deduce the distribution $q(x_{xr}(\cdot))$. Note, from
+Eq.~\ref{eq:gpfaWithIndPointsPrior}, that for any $P\in\mathbb{N}$ and for any
+$\mathbf{t}=(t_1,\ldots,t_P)\in\mathbb{R}^P$ the approximate variational
+posterior of the random vectors
+$\mathbf{x}_{kr}=(x_{kr}(t_1),\ldots,x_{kr}(t_P))$ and $\mathbf{u}_{kr}$ is
+jointly Gaussian
+
+\begin{equation}
+    \begin{aligned}
+        q(\mathbf{x}_{kr},\mathbf{u}_{kr})&=p(\mathbf{x}_{kr}|\mathbf{u}_{kr})q(\mathbf{u}_{kr})\\
+                                          &=\mathcal{N}\left(\mathbf{x}_{kr}|K_{tz}^{kr}(K_{zz}^{kr})^{-1}\mathbf{u}_{kr},\;K_{tt}^k-K_{tz}^{kr}(K_{zz}^{kr})^{-1}K_{zt}^{kr}\right)\mathcal{N}(\mathbf{u}_{kr}|\mathbf{m}_{kr},\;S_{kr})
+    \end{aligned}
+    \label{eq:qxu}
+\end{equation}
+
+\noindent where $K_{tt}$,$K_{tz}$,$K_{zt}$, and $K_{zz}$ are covariance matrices obtained by evalating of $\kappa_k(t,t')$,$\kappa_k(t,z)$,$\kappa_k(z,t)$, and $\kappa_k(z,z')$, respectively, at $t,t'\in \{t_1,\ldots t_P\}$ and $z,z'\in \{\mathbf{z}_{kr}[1],\ldots,\mathbf{z}_{kr}[M_{kr}]\}$. Next, using the expression for the marginal of a joint Gaussian distribution (e.g., Eq.~2.115 in \cite{bishop06}) we obtain
+
+\begin{align}
+    q(\mathbf{x}_{kr})=\mathcal{N}\left(\mathbf{x}_{kr}|K_{tz}^{kr}(K_{zz}^{kr})^{-1}\mathbf{m}_{kr},\;K_{tt}^k+K_{tz}^{kr}\left((K_{zz}^{kr})^{-1}S_{kr}(K_{zz}^{kr})^{-1}-(K_{zz}^{kr})^{-1  }\right)K_{zt}^{kr}\right)
+    \label{eq:qxRandomVec}
+\end{align}
+
+Because Eq.~\ref{eq:qxRandomVec} holds for any $P\in\mathbb{N}$ and for any $(t_1,\ldots,t_P)\in\mathbb{R}^P$ then
+
+\begin{equation}
+    \begin{aligned}
+        q(x_{kr}(\cdot))&=\mathcal{GP}\left(\breve\mu_{kr}(\cdot),\breve\kappa_{kr}(\cdot,\cdot)\right)\\
+        \breve\mu_{kr}(t)&=\kappa_k(t,z_{kr})(K_{zz}^{kr})^{-1}\mathbf{m}_{kr},\\
+        \breve\kappa_{kr}(t,t')&=\kappa_k(t,t')+\kappa_k(t,z_{kr})\left((K_{zz}^{kr})^{-1}S_{kr}(K_{zz}^{kr})^{-1}-(K_{zz}^{kr})^{-1}\right)\kappa_k(z_{kr},t')
+    \end{aligned}
+    \label{eq:qx}
+\end{equation}
+
+Finally, because affine trasformations of Gaussians are Gaussians,
+$h_{nr}(\cdot)$ is an affine transformation of $\{x_{kr}(\cdot)\}$ (which are
+Gaussians, Eq.~\ref{eq:qx}), then the approximate posterior of $h_{nr}(\cdot)$
+is the Gaussian process in Eq.~\ref{eq:qh}.
+
+\begin{equation}
+    \begin{aligned}
+        q(h_{nr}(\cdot))&=\mathcal{GP}\left(\tilde\mu_{nr}(\cdot),\tilde\kappa_{nr}(\cdot,\cdot)\right)\\
+        \tilde\mu_{nr}(t)&=\sum_{k=1}^Kc_{nk}\breve\mu_{kr}(t)\\
+        \tilde\kappa_{nr}(t,t')&=\sum_{k=1}^Kc_{nk}^2\breve\kappa_{kr}(t,t')
+    \end{aligned}
+    \label{eq:qh}
+\end{equation}
+
+\noindent which is Eq.~5 in \cite{dunckerAndSahani18}.
+
+\bibliographystyle{apalike}
+\bibliography{latentVariableModels,machineLearning}
+\end{document}

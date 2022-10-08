@@ -1,0 +1,9 @@
+*~
+*.aux
+*.bib
+*.log
+*.bbl
+*.blg
+*.dic
+*.out
+checkSpelling.*
