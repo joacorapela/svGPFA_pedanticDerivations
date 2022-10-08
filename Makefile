@@ -1,4 +1,4 @@
-all: pedanticSVGPFAtheory.pdf
+all: pedanticSVGPFAderivations.pdf
 
 %.pdf: %.tex
 	pdflatex $<
