@@ -1,5 +1,6 @@
 \documentclass[12pt]{article}
 
+\usepackage{verbatim}
 \usepackage{apalike}
 \let\bibhang\relax
 \usepackage{natbib}
@@ -23,6 +24,8 @@
 \abstract{Here we provide a pedantic description of the sparse variational
 Gaussian process factor analysis (svGPFA) theory, expanding on
 \cite{dunckerAndSahani18}.}
+
+\begin{comment}
 
 \section{GPFA model}
 
@@ -54,6 +57,8 @@ Notes:
         responses of different neurons are independent.
 
 \end{itemize}
+
+\end{comment}
 
 \section{svGPFA prior}
 
@@ -156,10 +161,9 @@ $\mathbf{t}_P^{(r)}$, and any $\mathbf{x}_{kr}$ derived from it, it follows that
 \end{equation*}
 
 \noindent which shows that the svGPFA prior on the latent processes is
-unrelated to the inducing points and identical to the GPFA one (second line in
-Eq.~\ref{eq:gpfaModel}, with $\mu_k(\cdot)=0(\cdot)$).
+unrelated to the inducing points.
 
-\section{Variational distribution of the latent process $x_{kr}(\cdot)$}
+\section{Approximate posterior on the latent process $x_{kr}(\cdot)$}
 
 From Eq.~3 in \citet[][supplementary]{dunckerAndSahani18}, the approximate joint
 posterior for the latent process $x_{kr}(\cdot)$ and the inducing points
@@ -206,23 +210,41 @@ $\mathbf{x}_{kr}$ derived from it, it follows that
     \label{eq:qx}
 \end{equation}
 
-\section{Variational distribution of $h_{nr}(\cdot)$}
+\section{Approximate posterior on the embedding $h_{nr}(\cdot)$}
 
-Finally, because affine trasformations of Gaussians are Gaussians,
-$h_{nr}(\cdot)$ is an affine transformation of $\{x_{kr}(\cdot)\}$ (which are
-Gaussians, Eq.~\ref{eq:qx}), then the approximate posterior of $h_{nr}(\cdot)$
-is the Gaussian process in Eq.~\ref{eq:qh}.
+The embedding for neuron $n$ and trial $r$ is
+
+\begin{equation}
+    h_{nr}(\cdot) = \sum_{k=1}^Kc_{nk}x_{kr}(\cdot)
+    \label{eq:embedding_nr}
+\end{equation}
+
+Affine transformations of Gaussian processes are Gaussian processes, therefore
+the approximate posterior on the embedding
+$h_{nr}(\cdot)$ is a Gaussian process. That is,
+
+\begin{equation}
+    q(h_{nr}(\cdot))=q\left(\sum_{k=1}^Kc_{nk}x_{kr}(\cdot)\right)=\mathcal{GP}(\tilde{\mu}_{nr}(\cdot),\tilde{\kappa}_{nr}(\cdot,\cdot))
+\end{equation}
+
+\noindent with
 
 \begin{equation}
     \begin{aligned}
-        q(h_{nr}(\cdot))&=\mathcal{GP}\left(\tilde\mu_{nr}(\cdot),\tilde\kappa_{nr}(\cdot,\cdot)\right)\\
-        \tilde\mu_{nr}(t)&=\sum_{k=1}^Kc_{nk}\breve\mu_{kr}(t)\\
-        \tilde\kappa_{nr}(t,t')&=\sum_{k=1}^Kc_{nk}^2\breve\kappa_{kr}(t,t')
+        \tilde{\mu}_{nr}(t)&=E_q\{h_{nr}(t)\}=\sum_{k=1}^Kc_{nk}E_q\{x_{kr}(t)\}=\sum_{k=1}^Kc_{nk}\,\breve\mu_{kr}(t)\\
+        \tilde{\kappa}_{nr}(t,t')&=E_q\left\{\left(h_{nr}(t)-\tilde{\mu}_{nr}(t)\right)\left(h_{nr}(t')-\tilde{\mu}_{nr}(t')\right)\right\}\\
+                                 &=E_q\left\{\left(\sum_{k=1}^Kc_{nk}(x_{kr}(t)-\breve\mu_{kr}(t))\right)\left(\sum_{k'=1}^Kc_{nk'}(x_{k'r}(t')-\breve\mu_{k'r}(t'))\right)\right\}\\
+                                 &=\sum_{k=1}^K\sum_{k'=1}^Kc_{nk}c_{nk'}E_q\left\{(x_{kr}(t)-\breve\mu_{kr}(t))(x_{k'r}(t')-\breve\mu_{k'r}(t'))\right\}\\
+                                 &=\sum_{k=1}^Kc_{nk}^2E_q\left\{(x_{kr}(t)-\breve\mu_{kr}(t))(x_{kr}(t')-\breve\mu_{kr}(t'))\right\}\\
+                                 &=\sum_{k=1}^Kc_{nk}^2\breve\kappa(t,t')
     \end{aligned}
     \label{eq:qh}
 \end{equation}
 
-\noindent which is Eq.~5 in \cite{dunckerAndSahani18}.
+The second-to-last line in Eq.~\ref{eq:qh} follows from the independence
+assumption of the latent processes, $x_{kr}(\cdot)$ and $x_{k'r}(\cdot)$, $k\ne
+k'$, by the variational distribution $q$
+\citep[][supplementary]{dunckerAndSahani18}.
 
 \section{Derivation of the svGPFA variational lower bound}
 
